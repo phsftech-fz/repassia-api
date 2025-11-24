@@ -1,0 +1,21 @@
+# Nixpacks Configuration for RepassIA API
+# Easypanel usa Nixpacks para detectar e construir aplicações automaticamente
+
+[providers]
+node = "18"
+
+[phases.setup]
+nixPkgs = ["nodejs-18_x"]
+
+[phases.install]
+cmds = [
+  "npm ci --only=production",
+  "npx prisma generate"
+]
+
+[phases.build]
+cmds = []
+
+[start]
+cmd = "node server.js"
+
