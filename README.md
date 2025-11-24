@@ -62,7 +62,42 @@ Isso iniciará:
 
 ### Públicos
 
-- `GET /api/v1/cars` - Listar carros
+#### Listar Carros
+- `GET /api/v1/cars` - Listar carros com filtros e paginação
+
+**Query Parameters:**
+- `page` - Número da página (padrão: 1)
+- `limit` - Itens por página (padrão: 20, máximo: 100)
+- `brand` - Filtrar por marca (busca parcial, case-insensitive)
+- `model` - Filtrar por modelo (busca parcial, case-insensitive)
+- `year` - Filtrar por ano exato
+- `min_price` - Preço mínimo
+- `max_price` - Preço máximo
+- `status` - Status do carro (`disponível`, `reservado`, `vendido`)
+- `fuel_type` - Tipo de combustível (`gasolina`, `etanol`, `flex`, `diesel`, `elétrico`, `híbrido`)
+- `transmission` - Tipo de transmissão (`manual`, `automático`, `automatizado`, `cvt`)
+- `sort_by` - Campo para ordenação (`price`, `year`, `createdAt` - padrão: `createdAt`)
+- `sort_order` - Ordem (`asc`, `desc` - padrão: `desc`)
+
+**Exemplo:**
+```
+GET /api/v1/cars?brand=Toyota&min_price=30000&max_price=100000&status=disponível&sort_by=price&sort_order=asc&page=1&limit=20
+```
+
+**Resposta:**
+```json
+{
+  "success": true,
+  "data": [...],
+  "meta": {
+    "total": 150,
+    "page": 1,
+    "limit": 20,
+    "totalPages": 8
+  }
+}
+```
+
 - `GET /api/v1/cars/:id` - Detalhes do carro
 - `GET /api/v1/cars/:id/images` - Imagens do carro
 - `GET /api/v1/images/:filename` - Servir imagem
