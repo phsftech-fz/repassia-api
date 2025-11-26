@@ -42,8 +42,6 @@ class CarService {
     };
 
     const car = await carRepository.create(normalizedData);
-    logger.info(`Carro criado: ${car.id}`);
-    
     return formatCarWithImages(car);
   }
 
@@ -86,8 +84,6 @@ class CarService {
     if (carData.chassis !== undefined) normalizedData.chassis = carData.chassis || null;
 
     const updatedCar = await carRepository.update(id, normalizedData);
-    logger.info(`Carro atualizado: ${id}`);
-    
     return formatCarWithImages(updatedCar);
   }
 
@@ -99,8 +95,6 @@ class CarService {
     }
 
     const updatedCar = await carRepository.update(id, { status });
-    logger.info(`Status do carro ${id} atualizado para ${status}`);
-    
     return formatCarWithImages(updatedCar);
   }
 
@@ -112,8 +106,6 @@ class CarService {
     }
 
     await carRepository.delete(id);
-    logger.info(`Carro deletado: ${id}`);
-    
     return true;
   }
 

@@ -11,10 +11,8 @@ const { checkMinioConnection } = require('./config/minio');
 
 const app = express();
 
-// Configurar trust proxy para funcionar corretamente atrás de proxy reverso (Nginx, Load Balancer, etc)
 app.set('trust proxy', true);
 
-// Middlewares globais
 app.use(helmet({
   crossOriginResourcePolicy: { policy: "cross-origin" },
   crossOriginEmbedderPolicy: false,
@@ -25,32 +23,32 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(loggerMiddleware);
 
-// Middleware específico para garantir CORS em imagens (após todos os middlewares)
 app.use('/api/v1/images', (req, res, next) => {
   const config = require('./config/env');
   const origin = req.headers.origin;
   const allowedOrigins = config.cors.allowedOrigins || [];
   
-  let allowedOrigin = '*';
+  let allowedOrigin = null;
   if (allowedOrigins.includes('*') || allowedOrigins.length === 0) {
-    allowedOrigin = '*';
+    allowedOrigin = origin || '*';
   } else if (origin && allowedOrigins.includes(origin)) {
     allowedOrigin = origin;
   } else if (!origin) {
     allowedOrigin = '*';
   }
   
-  res.setHeader('Access-Control-Allow-Origin', allowedOrigin);
-  if (allowedOrigin !== '*') {
-    res.setHeader('Access-Control-Allow-Credentials', 'true');
+  if (allowedOrigin) {
+    res.setHeader('Access-Control-Allow-Origin', allowedOrigin);
+    if (allowedOrigin !== '*' && origin) {
+      res.setHeader('Access-Control-Allow-Credentials', 'true');
+    }
+    res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
   }
-  res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
   
   next();
 });
 
-// Health check
 app.get('/health', async (req, res) => {
   try {
     const dbStatus = await checkDatabaseConnection();
@@ -72,12 +70,10 @@ app.get('/health', async (req, res) => {
   }
 });
 
-// Rotas
 app.use('/api/v1', publicRoutes);
 app.use('/api/v1/auth', authRoutes);
 app.use('/api/v1/admin', adminRoutes);
 
-// Rota raiz
 app.get('/', (req, res) => {
   res.json({
     name: 'RepassIA API',
@@ -86,7 +82,6 @@ app.get('/', (req, res) => {
   });
 });
 
-// Middleware de erro (deve ser o último)
 app.use(errorMiddleware);
 
 module.exports = app;

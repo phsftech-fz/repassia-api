@@ -38,12 +38,7 @@ class ImageService {
     });
 
     const imagesData = await Promise.all(uploadPromises);
-
-    // Salvar no banco
     await imageRepository.createMany(imagesData);
-
-    logger.info(`${files.length} imagem(ns) adicionada(s) ao carro ${carId}`);
-
     const images = await imageRepository.findByCarId(carId);
     return formatImages(images);
   }
@@ -55,10 +50,8 @@ class ImageService {
       throw new Error('Imagem não encontrada');
     }
 
-    // Extrair nome do arquivo (pode ser path ou URL completa)
     const fileName = storageService.extractFileNameFromUrl(image.imageUrl);
     
-    // Deletar do MinIO
     if (fileName) {
       try {
         await storageService.deleteFile(fileName);
@@ -67,11 +60,7 @@ class ImageService {
       }
     }
 
-    // Deletar do banco
     await imageRepository.delete(imageId);
-
-    logger.info(`Imagem deletada: ${imageId}`);
-
     return true;
   }
 
@@ -82,22 +71,17 @@ class ImageService {
       throw new Error('Imagem não encontrada');
     }
 
-    // Usar transação para garantir atomicidade
     await prisma.$transaction(async (tx) => {
-      // Remover primary de todas as imagens do carro
       await tx.carImage.updateMany({
         where: { carId: image.carId },
         data: { isPrimary: false }
       });
 
-      // Definir esta imagem como primary
       await tx.carImage.update({
         where: { id: imageId },
         data: { isPrimary: true }
       });
     });
-
-    logger.info(`Imagem ${imageId} definida como principal`);
 
     const updatedImage = await imageRepository.findById(imageId);
     return formatImage(updatedImage);
@@ -111,8 +95,6 @@ class ImageService {
     }
 
     const updatedImage = await imageRepository.updateOrder(imageId, displayOrder);
-    logger.info(`Ordem da imagem ${imageId} atualizada para ${displayOrder}`);
-
     return formatImage(updatedImage);
   }
 }

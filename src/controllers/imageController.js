@@ -72,7 +72,6 @@ class ImageController {
 
   async serveImage(req, res) {
     try {
-      // Captura tudo após /images/ usando req.params[0] quando usa wildcard *
       const fileName = req.params[0] || req.params.filename;
       
       if (!fileName) {
@@ -81,38 +80,36 @@ class ImageController {
 
       const fileData = await storageService.getFile(fileName);
       
-      // Determinar content-type baseado na extensão se não estiver nos metadados
       const contentType = fileData.stat.metaData['content-type'] || 
                          fileData.stat.metaData['Content-Type'] ||
                          'image/jpeg';
       
-      // Headers CORS explícitos para garantir que imagens sejam acessíveis
       const config = require('../config/env');
       const origin = req.headers.origin;
       const allowedOrigins = config.cors.allowedOrigins || [];
       
-      // Determinar qual origin permitir
-      let allowedOrigin = '*';
+      let allowedOrigin = null;
       if (allowedOrigins.includes('*') || allowedOrigins.length === 0) {
-        allowedOrigin = '*';
+        allowedOrigin = origin || '*';
       } else if (origin && allowedOrigins.includes(origin)) {
         allowedOrigin = origin;
       } else if (!origin) {
-        // Requisição direta de imagem (sem origin header) - permitir todas
         allowedOrigin = '*';
       }
       
-      // Sempre definir os headers CORS antes de qualquer outro header
-      res.setHeader('Access-Control-Allow-Origin', allowedOrigin);
-      if (allowedOrigin !== '*') {
-        res.setHeader('Access-Control-Allow-Credentials', 'true');
+      if (allowedOrigin) {
+        res.setHeader('Access-Control-Allow-Origin', allowedOrigin);
+        if (allowedOrigin !== '*' && origin) {
+          res.setHeader('Access-Control-Allow-Credentials', 'true');
+        }
+        res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
+        res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
       }
-      res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
-      res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
       
       res.setHeader('Content-Type', contentType);
       res.setHeader('Content-Length', fileData.stat.size);
       res.setHeader('Cache-Control', 'public, max-age=31536000');
+      res.setHeader('Vary', 'Origin');
       
       fileData.stream.pipe(res);
     } catch (err) {

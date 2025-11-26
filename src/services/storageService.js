@@ -20,9 +20,8 @@ class StorageService {
         }
       );
 
-      logger.info(`Arquivo enviado: ${fileName}`);
       return {
-        fileName, // Retornar apenas o path, não a URL completa
+        fileName,
         size: file.size,
         mimetype: file.mimetype
       };
@@ -35,7 +34,6 @@ class StorageService {
   async deleteFile(fileName) {
     try {
       await minioClient.removeObject(config.minio.bucket, fileName);
-      logger.info(`Arquivo removido: ${fileName}`);
       return true;
     } catch (error) {
       logger.error(`Erro ao remover arquivo ${fileName}:`, error);
@@ -59,12 +57,10 @@ class StorageService {
   }
 
   extractFileNameFromUrl(urlOrPath) {
-    // Se já for um path (não começa com http), retornar como está
     if (urlOrPath && !urlOrPath.startsWith('http://') && !urlOrPath.startsWith('https://')) {
       return urlOrPath;
     }
     
-    // Extrair path de URL completa
     const parts = urlOrPath.split('/api/v1/images/');
     return parts.length > 1 ? parts[1] : null;
   }
