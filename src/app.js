@@ -11,6 +11,9 @@ const { checkMinioConnection } = require('./config/minio');
 
 const app = express();
 
+// Configurar trust proxy para funcionar corretamente atrás de proxy reverso (Nginx, Load Balancer, etc)
+app.set('trust proxy', true);
+
 // Middlewares globais
 app.use(helmet({
   crossOriginResourcePolicy: { policy: "cross-origin" },
