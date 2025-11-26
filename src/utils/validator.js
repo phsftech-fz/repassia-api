@@ -207,7 +207,17 @@ const birthDateSchema = Joi.string().pattern(/^\d{4}-\d{2}-\d{2}$/).custom((valu
 });
 
 // Schema para data de admissão (não pode ser futura)
-const admissionDateSchema = Joi.string().pattern(/^\d{4}-\d{2}-\d{2}$/).custom((value, helpers) => {
+const admissionDateSchema = Joi.string().custom((value, helpers) => {
+  // Permitir null, undefined ou string vazia
+  if (!value || value.trim() === '') {
+    return value;
+  }
+  
+  // Validar formato
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) {
+    return helpers.error('string.pattern.base');
+  }
+  
   const [year, month, day] = value.split('-').map(Number);
   const date = new Date(year, month - 1, day);
   
@@ -330,7 +340,7 @@ const professionalDataSchema = Joi.object({
     'string.max': 'Cidade da empresa deve ter no máximo 100 caracteres'
   }),
   companyState: stateSchema.allow(null, '').empty(['', null]).default(null).optional(),
-  admissionDate: admissionDateSchema.allow(null).optional(),
+  admissionDate: admissionDateSchema.allow(null, '').empty(['', null]).default(null).optional(),
   grossIncome: Joi.number().positive().allow(null).optional().messages({
     'number.positive': 'Renda bruta deve ser um número positivo'
   }),
