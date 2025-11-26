@@ -9,6 +9,8 @@ class CarController {
         brand: req.query.brand,
         model: req.query.model,
         year: req.query.year,
+        minYear: req.query.min_year,
+        maxYear: req.query.max_year,
         minPrice: req.query.min_price,
         maxPrice: req.query.max_price,
         status: req.query.status,

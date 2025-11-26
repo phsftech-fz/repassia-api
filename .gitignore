@@ -36,7 +36,9 @@ coverage/
 .nyc_output/
 
 # Prisma
-prisma/migrations/
+# migrations/ deve estar no repositório para deploy funcionar
+# Apenas ignorar arquivos temporários do Prisma
+.prisma/
 
 # Docker
 docker-compose.override.yml

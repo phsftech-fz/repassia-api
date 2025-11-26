@@ -60,6 +60,36 @@ class AuthController {
       return error(res, err.message || 'Token inválido', 'AUTH_ERROR', null, 401);
     }
   }
+
+  async refreshToken(req, res) {
+    try {
+      const { refreshToken } = req.body;
+      const result = await authService.refreshAccessToken(refreshToken);
+      
+      return success(res, result, 'Token renovado com sucesso');
+    } catch (err) {
+      logger.error('Erro ao renovar token:', err);
+      
+      if (err.message === 'Refresh token inválido ou expirado' || 
+          err.message === 'Perfil não encontrado ou inativo') {
+        return error(res, err.message, 'AUTH_ERROR', null, 401);
+      }
+      
+      return error(res, 'Erro ao renovar token', 'AUTH_ERROR', null, 500);
+    }
+  }
+
+  async revokeRefreshToken(req, res) {
+    try {
+      const { refreshToken } = req.body;
+      await authService.revokeRefreshToken(refreshToken);
+      
+      return success(res, null, 'Refresh token revogado com sucesso');
+    } catch (err) {
+      logger.error('Erro ao revogar refresh token:', err);
+      return error(res, err.message || 'Erro ao revogar refresh token', 'AUTH_ERROR', null, 500);
+    }
+  }
 }
 
 module.exports = new AuthController();

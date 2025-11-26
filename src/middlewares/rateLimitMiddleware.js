@@ -50,9 +50,29 @@ const adminLimiter = rateLimit({
   }
 });
 
+// Rate limit para formulário (2 submissões por IP em 15 minutos)
+const formLimiter = rateLimit({
+  windowMs: (process.env.FORM_RATE_LIMIT_WINDOW || 15) * 60 * 1000, // minutos em ms
+  max: process.env.FORM_RATE_LIMIT_MAX || 2, // máximo de submissões
+  message: {
+    success: false,
+    error: {
+      code: 'RATE_LIMIT_EXCEEDED',
+      message: 'Muitas tentativas. Tente novamente em alguns minutos.'
+    }
+  },
+  standardHeaders: true,
+  legacyHeaders: false,
+  keyGenerator: (req) => {
+    // Usar IP como chave para rate limiting
+    return req.ip || req.connection.remoteAddress;
+  }
+});
+
 module.exports = {
   authLimiter,
   publicLimiter,
-  adminLimiter
+  adminLimiter,
+  formLimiter
 };
 

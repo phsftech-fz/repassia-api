@@ -1,6 +1,7 @@
 const cron = require('node-cron');
 const carService = require('../services/carService');
 const storageService = require('../services/storageService');
+const { extractImagePath } = require('../utils/imageUrlHelper');
 const config = require('../config/env');
 const logger = require('../utils/logger');
 
@@ -20,7 +21,7 @@ const runCleanup = async () => {
       try {
         // Deletar imagens do MinIO
         for (const image of car.images) {
-          const fileName = storageService.extractFileNameFromUrl(image.imageUrl);
+          const fileName = extractImagePath(image.imageUrl);
           if (fileName) {
             try {
               await storageService.deleteFile(fileName);

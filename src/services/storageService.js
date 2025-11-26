@@ -20,12 +20,9 @@ class StorageService {
         }
       );
 
-      const url = `${config.server.apiBaseUrl}/api/v1/images/${fileName}`;
-      
       logger.info(`Arquivo enviado: ${fileName}`);
       return {
-        url,
-        fileName,
+        fileName, // Retornar apenas o path, não a URL completa
         size: file.size,
         mimetype: file.mimetype
       };
@@ -61,8 +58,14 @@ class StorageService {
     }
   }
 
-  extractFileNameFromUrl(url) {
-    const parts = url.split('/api/v1/images/');
+  extractFileNameFromUrl(urlOrPath) {
+    // Se já for um path (não começa com http), retornar como está
+    if (urlOrPath && !urlOrPath.startsWith('http://') && !urlOrPath.startsWith('https://')) {
+      return urlOrPath;
+    }
+    
+    // Extrair path de URL completa
+    const parts = urlOrPath.split('/api/v1/images/');
     return parts.length > 1 ? parts[1] : null;
   }
 }

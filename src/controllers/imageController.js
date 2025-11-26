@@ -59,7 +59,7 @@ class ImageController {
 
   async updateImageOrder(req, res) {
     try {
-      const image = await imageService.updateImageOrder(req.params.id, req.body.display_order);
+      const image = await imageService.updateImageOrder(req.params.id, req.body.displayOrder);
       return success(res, image, 'Ordem da imagem atualizada com sucesso');
     } catch (err) {
       if (err.message === 'Imagem não encontrada') {
@@ -72,10 +72,21 @@ class ImageController {
 
   async serveImage(req, res) {
     try {
-      const fileName = req.params.filename;
+      // Captura tudo após /images/ usando req.params[0] quando usa wildcard *
+      const fileName = req.params[0] || req.params.filename;
+      
+      if (!fileName) {
+        return error(res, 'Nome do arquivo não fornecido', 'VALIDATION_ERROR', null, 400);
+      }
+
       const fileData = await storageService.getFile(fileName);
       
-      res.setHeader('Content-Type', fileData.stat.metaData['content-type'] || 'image/jpeg');
+      // Determinar content-type baseado na extensão se não estiver nos metadados
+      const contentType = fileData.stat.metaData['content-type'] || 
+                         fileData.stat.metaData['Content-Type'] ||
+                         'image/jpeg';
+      
+      res.setHeader('Content-Type', contentType);
       res.setHeader('Content-Length', fileData.stat.size);
       res.setHeader('Cache-Control', 'public, max-age=31536000');
       

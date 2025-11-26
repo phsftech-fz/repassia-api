@@ -1,11 +1,13 @@
 const { prisma } = require('../config/database');
 const imageRepository = require('../repositories/imageRepository');
 const storageService = require('./storageService');
+const { formatImages, formatImage } = require('../utils/imageUrlHelper');
 const logger = require('../utils/logger');
 
 class ImageService {
   async getImagesByCarId(carId) {
-    return await imageRepository.findByCarId(carId);
+    const images = await imageRepository.findByCarId(carId);
+    return formatImages(images);
   }
 
   async uploadImages(carId, files) {
@@ -29,7 +31,7 @@ class ImageService {
       
       return {
         carId,
-        imageUrl: uploadResult.url,
+        imageUrl: uploadResult.fileName, // Salvar apenas o path
         displayOrder: existingCount + index,
         isPrimary: isFirstImage && index === 0
       };
@@ -42,7 +44,8 @@ class ImageService {
 
     logger.info(`${files.length} imagem(ns) adicionada(s) ao carro ${carId}`);
 
-    return await imageRepository.findByCarId(carId);
+    const images = await imageRepository.findByCarId(carId);
+    return formatImages(images);
   }
 
   async deleteImage(imageId) {
@@ -52,7 +55,7 @@ class ImageService {
       throw new Error('Imagem não encontrada');
     }
 
-    // Extrair nome do arquivo da URL
+    // Extrair nome do arquivo (pode ser path ou URL completa)
     const fileName = storageService.extractFileNameFromUrl(image.imageUrl);
     
     // Deletar do MinIO
@@ -96,7 +99,8 @@ class ImageService {
 
     logger.info(`Imagem ${imageId} definida como principal`);
 
-    return await imageRepository.findById(imageId);
+    const updatedImage = await imageRepository.findById(imageId);
+    return formatImage(updatedImage);
   }
 
   async updateImageOrder(imageId, displayOrder) {
@@ -109,7 +113,7 @@ class ImageService {
     const updatedImage = await imageRepository.updateOrder(imageId, displayOrder);
     logger.info(`Ordem da imagem ${imageId} atualizada para ${displayOrder}`);
 
-    return updatedImage;
+    return formatImage(updatedImage);
   }
 }
 

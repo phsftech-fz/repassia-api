@@ -16,7 +16,16 @@ class CarRepository {
       where.model = { contains: filters.model, mode: 'insensitive' };
     }
 
-    if (filters.year) {
+    // Filtro de ano: range (minYear/maxYear) tem prioridade sobre ano exato
+    if (filters.minYear || filters.maxYear) {
+      where.year = {};
+      if (filters.minYear) {
+        where.year.gte = parseInt(filters.minYear, 10);
+      }
+      if (filters.maxYear) {
+        where.year.lte = parseInt(filters.maxYear, 10);
+      }
+    } else if (filters.year) {
       where.year = parseInt(filters.year, 10);
     }
 

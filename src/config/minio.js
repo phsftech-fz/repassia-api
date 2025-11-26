@@ -20,8 +20,10 @@ const ensureBucket = async () => {
     } else {
       logger.info(`✅ Bucket "${config.minio.bucket}" já existe`);
     }
+    return true;
   } catch (error) {
     logger.error('Erro ao verificar/criar bucket:', error);
+    throw error;
   }
 };
 
@@ -36,8 +38,10 @@ const checkMinioConnection = async () => {
   }
 };
 
-// Inicializar bucket na inicialização
-ensureBucket();
+// Inicializar bucket na inicialização (não bloqueante)
+ensureBucket().catch((error) => {
+  logger.warn('⚠️ Bucket não inicializado na importação, será inicializado no start:', error.message);
+});
 
 module.exports = {
   minioClient,

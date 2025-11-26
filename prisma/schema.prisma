@@ -25,6 +25,7 @@ model Car {
   updatedAt     DateTime    @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
 
   images        CarImage[]
+  formSubmissions FormSubmission[]
 
   @@map("cars")
 }
@@ -52,7 +53,7 @@ model Profile {
   updatedAt   DateTime  @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
   lastLoginAt DateTime? @map("last_login_at") @db.Timestamptz(6)
 
-  @@index([fixedToken], where: { fixedToken: { not: null } })
+  @@index([fixedToken])
   @@map("profiles")
 }
 
@@ -66,5 +67,77 @@ model AuthCode {
 
   @@index([expiresAt])
   @@map("auth_codes")
+}
+
+model RefreshToken {
+  id        String   @id @default(uuid()) @db.Uuid
+  userId    String   @map("user_id") @db.Uuid
+  token     String   @unique
+  expiresAt DateTime @map("expires_at") @db.Timestamptz(6)
+  revoked   Boolean  @default(false)
+  revokedAt DateTime? @map("revoked_at") @db.Timestamptz(6)
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  @@index([userId])
+  @@index([token])
+  @@index([expiresAt])
+  @@map("refresh_tokens")
+}
+
+model FormSubmission {
+  id                    String    @id @default(uuid()) @db.Uuid
+  fullName              String    @map("full_name")
+  email                 String
+  phone                 String
+  rg                    String?
+  cpf                   String
+  birthDate             DateTime  @map("birth_date") @db.Date
+  motherName            String    @map("mother_name")
+  fatherName            String?   @map("father_name")
+  birthCity             String    @map("birth_city")
+  birthState            String?   @map("birth_state")
+  maritalStatus         String?   @map("marital_status")
+  hasDriverLicense      Boolean   @default(false) @map("has_driver_license")
+  driverLicenseCategory String?   @map("driver_license_category")
+  zipCode               String    @map("zip_code")
+  street                String
+  number                String
+  complement            String?
+  neighborhood          String
+  city                  String
+  state                 String?
+  residenceTime         String?   @map("residence_time")
+  residenceType         String?    @map("residence_type")
+  employmentType        String?    @map("employment_type")
+  companyName           String?    @map("company_name")
+  companyZipCode        String?    @map("company_zip_code")
+  companyPhone          String?    @map("company_phone")
+  companyStreet         String?    @map("company_street")
+  companyNeighborhood   String?    @map("company_neighborhood")
+  companyCity           String?    @map("company_city")
+  companyState          String?    @map("company_state")
+  admissionDate         DateTime?  @map("admission_date") @db.Date
+  grossIncome           Decimal?   @map("gross_income") @db.Decimal
+  position              String?
+  activityDescription   String?    @map("activity_description")
+  activityTime          String?    @map("activity_time")
+  referenceName         String?    @map("reference_name")
+  referencePhone        String?    @map("reference_phone")
+  carId                 String?    @map("car_id") @db.Uuid
+  message               String?
+  whatsappLinkSent      Boolean   @default(false) @map("whatsapp_link_sent")
+  ipAddress             String?    @map("ip_address")
+  userAgent             String?    @map("user_agent")
+  createdAt             DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt             DateTime  @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  car                   Car?      @relation(fields: [carId], references: [id], onDelete: SetNull)
+
+  @@index([email])
+  @@index([cpf])
+  @@index([phone])
+  @@index([createdAt])
+  @@index([carId])
+  @@map("form_submissions")
 }
 

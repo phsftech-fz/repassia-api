@@ -1,9 +1,14 @@
 const carRepository = require('../repositories/carRepository');
+const { formatCarsWithImages, formatCarWithImages } = require('../utils/imageUrlHelper');
 const logger = require('../utils/logger');
 
 class CarService {
   async listCars(filters, pagination) {
-    return await carRepository.findAll(filters, pagination);
+    const result = await carRepository.findAll(filters, pagination);
+    return {
+      ...result,
+      data: formatCarsWithImages(result.data)
+    };
   }
 
   async getCarById(id) {
@@ -13,7 +18,7 @@ class CarService {
       throw new Error('Carro não encontrado');
     }
 
-    return car;
+    return formatCarWithImages(car);
   }
 
   async createCar(carData) {
@@ -28,8 +33,8 @@ class CarService {
         ? (typeof carData.mileage === 'number' ? carData.mileage : parseInt(carData.mileage, 10))
         : 0,
       color: carData.color || null,
-      fuelType: carData.fuelType || null,
-      transmission: carData.transmission || null,
+      fuelType: carData.fuelType !== undefined && carData.fuelType !== null ? String(carData.fuelType).trim() || null : null,
+      transmission: carData.transmission !== undefined && carData.transmission !== null ? String(carData.transmission).trim() || null : null,
       description: carData.description || null,
       status: carData.status || 'disponível',
       licensePlate: carData.licensePlate || null,
@@ -39,7 +44,7 @@ class CarService {
     const car = await carRepository.create(normalizedData);
     logger.info(`Carro criado: ${car.id}`);
     
-    return car;
+    return formatCarWithImages(car);
   }
 
   async updateCar(id, carData) {
@@ -73,8 +78,8 @@ class CarService {
         : 0;
     }
     if (carData.color !== undefined) normalizedData.color = carData.color || null;
-    if (carData.fuelType !== undefined) normalizedData.fuelType = carData.fuelType || null;
-    if (carData.transmission !== undefined) normalizedData.transmission = carData.transmission || null;
+    if (carData.fuelType !== undefined) normalizedData.fuelType = carData.fuelType !== null ? String(carData.fuelType).trim() || null : null;
+    if (carData.transmission !== undefined) normalizedData.transmission = carData.transmission !== null ? String(carData.transmission).trim() || null : null;
     if (carData.description !== undefined) normalizedData.description = carData.description || null;
     if (carData.status !== undefined) normalizedData.status = carData.status;
     if (carData.licensePlate !== undefined) normalizedData.licensePlate = carData.licensePlate || null;
@@ -83,7 +88,7 @@ class CarService {
     const updatedCar = await carRepository.update(id, normalizedData);
     logger.info(`Carro atualizado: ${id}`);
     
-    return updatedCar;
+    return formatCarWithImages(updatedCar);
   }
 
   async updateCarStatus(id, status) {
@@ -96,7 +101,7 @@ class CarService {
     const updatedCar = await carRepository.update(id, { status });
     logger.info(`Status do carro ${id} atualizado para ${status}`);
     
-    return updatedCar;
+    return formatCarWithImages(updatedCar);
   }
 
   async deleteCar(id) {

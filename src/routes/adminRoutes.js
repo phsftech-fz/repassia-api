@@ -2,8 +2,10 @@ const express = require('express');
 const router = express.Router();
 const carController = require('../controllers/carController');
 const imageController = require('../controllers/imageController');
+const formSubmissionController = require('../controllers/formSubmissionController');
 const carService = require('../services/carService');
 const storageService = require('../services/storageService');
+const { extractImagePath } = require('../utils/imageUrlHelper');
 const authMiddleware = require('../middlewares/authMiddleware');
 const { adminLimiter } = require('../middlewares/rateLimitMiddleware');
 const { uploadMultiple } = require('../middlewares/uploadMiddleware');
@@ -36,6 +38,10 @@ router.delete('/images/:id', imageController.deleteImage.bind(imageController));
 router.put('/images/:id/set-primary', imageController.setPrimaryImage.bind(imageController));
 router.put('/images/:id/order', validate(imageOrderSchema), imageController.updateImageOrder.bind(imageController));
 
+// Rotas admin de formulários
+router.get('/form-submissions', formSubmissionController.getSubmissions.bind(formSubmissionController));
+router.get('/form-submissions/:id', formSubmissionController.getSubmissionById.bind(formSubmissionController));
+
 // Rota admin para executar limpeza manualmente
 router.post('/cleanup', async (req, res) => {
   try {
@@ -47,7 +53,7 @@ router.post('/cleanup', async (req, res) => {
       try {
         // Deletar imagens do MinIO
         for (const image of car.images) {
-          const fileName = storageService.extractFileNameFromUrl(image.imageUrl);
+          const fileName = extractImagePath(image.imageUrl);
           if (fileName) {
             try {
               await storageService.deleteFile(fileName);

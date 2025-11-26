@@ -8,14 +8,21 @@ node = "18"
 nixPkgs = ["nodejs-18_x"]
 
 [phases.install]
+# Instalar dependências de produção primeiro
 cmds = [
-  "npm ci --only=production",
-  "npx prisma generate"
+  "npm ci --only=production"
 ]
 
 [phases.build]
-cmds = []
+# Instalar Prisma CLI temporariamente apenas para gerar o client
+# Depois removemos para manter a imagem menor
+cmds = [
+  "npm install --no-save prisma@^5.7.0",
+  "npx prisma generate",
+  "npm uninstall prisma"
+]
 
+# Comando de inicialização
 [start]
 cmd = "node server.js"
 

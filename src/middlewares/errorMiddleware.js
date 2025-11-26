@@ -2,20 +2,20 @@ const { error } = require('../utils/response');
 const logger = require('../utils/logger');
 
 const errorMiddleware = (err, req, res, next) => {
-  logger.error('Erro capturado:', {
+  logger.error('Erro capturado', {
     message: err.message,
-    stack: err.stack,
+    code: err.code,
     url: req.url,
-    method: req.method
+    method: req.method,
+    statusCode: err.statusCode || res.statusCode
   });
 
-  // Erro de validação do Joi
   if (err.isJoi) {
     return res.status(400).json({
       success: false,
       error: {
         code: 'VALIDATION_ERROR',
-        message: 'Erro de validação',
+        message: 'Por favor, verifique os dados informados',
         details: err.details.map(detail => ({
           field: detail.path.join('.'),
           message: detail.message
@@ -24,24 +24,30 @@ const errorMiddleware = (err, req, res, next) => {
     });
   }
 
-  // Erro de CORS
   if (err.message === 'Não permitido pelo CORS') {
-    return error(res, 'Origem não permitida', 'CORS_ERROR', null, 403);
+    return error(res, 'Acesso não permitido para esta origem', 'CORS_ERROR', null, 403);
   }
 
-  // Erro de Prisma
   if (err.code === 'P2002') {
-    return error(res, 'Registro duplicado', 'DUPLICATE_ERROR', null, 409);
+    const field = err.meta?.target?.[0] || 'registro';
+    return error(res, `Este ${field} já está cadastrado no sistema`, 'DUPLICATE_ERROR', null, 409);
   }
 
   if (err.code === 'P2025') {
     return error(res, 'Registro não encontrado', 'NOT_FOUND', null, 404);
   }
 
-  // Erro genérico
+  if (err.code === 'P2003') {
+    return error(res, 'Referência inválida. Verifique os dados informados', 'INVALID_REFERENCE', null, 400);
+  }
+
+  if (err.code === 'P2023') {
+    return error(res, 'ID inválido. Verifique o formato do identificador', 'INVALID_ID', null, 400);
+  }
+
   const statusCode = err.statusCode || 500;
   const message = process.env.NODE_ENV === 'production' 
-    ? 'Erro interno do servidor' 
+    ? 'Ocorreu um erro ao processar sua solicitação. Tente novamente mais tarde.' 
     : err.message;
 
   return error(res, message, 'INTERNAL_ERROR', null, statusCode);

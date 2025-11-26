@@ -2,24 +2,41 @@ const nodemailer = require('nodemailer');
 const config = require('./env');
 const logger = require('../utils/logger');
 
-const transporter = nodemailer.createTransport({
-  host: config.smtp.host,
-  port: config.smtp.port,
-  secure: config.smtp.port === 465,
-  auth: {
-    user: config.smtp.user,
-    pass: config.smtp.password
-  }
-});
+// Criar transporter apenas se SMTP estiver configurado
+let transporter = null;
 
-// Verificar configuração do transporte
-transporter.verify((error, success) => {
-  if (error) {
-    logger.error('❌ Erro na configuração do SMTP:', error);
-  } else {
-    logger.info('✅ Configuração do SMTP verificada');
-  }
-});
+if (config.smtp.host && config.smtp.user && config.smtp.password) {
+  transporter = nodemailer.createTransport({
+    host: config.smtp.host,
+    port: config.smtp.port,
+    secure: config.smtp.port === 465,
+    auth: {
+      user: config.smtp.user,
+      pass: config.smtp.password
+    }
+  });
+
+  // Verificar configuração do transporte (não bloqueante, com timeout)
+  const verifyTimeout = setTimeout(() => {
+    logger.warn('⚠️ Timeout ao verificar SMTP. Continuando sem verificação.');
+  }, 5000);
+
+  transporter.verify((error, success) => {
+    clearTimeout(verifyTimeout);
+    if (error) {
+      logger.warn('⚠️ SMTP não configurado corretamente. Funcionalidade de email estará desabilitada.');
+      logger.warn('⚠️ Configure SMTP_USER e SMTP_PASSWORD no .env para habilitar envio de emails.');
+      if (config.server.nodeEnv === 'development') {
+        logger.warn('⚠️ Detalhes do erro:', error.message);
+      }
+    } else {
+      logger.info('✅ Configuração do SMTP verificada');
+    }
+  });
+} else {
+  logger.warn('⚠️ SMTP não configurado. Funcionalidade de email estará desabilitada.');
+  logger.warn('⚠️ Configure SMTP_HOST, SMTP_USER e SMTP_PASSWORD no .env para habilitar envio de emails.');
+}
 
 const sendAuthCodeEmail = async (email, name, code) => {
   const html = `
@@ -45,6 +62,10 @@ const sendAuthCodeEmail = async (email, name, code) => {
     </html>
   `;
 
+  if (!transporter) {
+    throw new Error('SMTP não configurado');
+  }
+
   try {
     const info = await transporter.sendMail({
       from: config.smtp.from,
@@ -53,10 +74,10 @@ const sendAuthCodeEmail = async (email, name, code) => {
       html
     });
 
-    logger.info(`Email de código enviado para ${email}: ${info.messageId}`);
+    logger.info(`Email de código enviado com sucesso`);
     return true;
   } catch (error) {
-    logger.error(`Erro ao enviar email para ${email}:`, error);
+    logger.error('Erro ao enviar email:', error.message || error);
     throw error;
   }
 };
