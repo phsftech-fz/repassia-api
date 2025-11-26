@@ -17,7 +17,9 @@ const corsOptions = {
       return callback(null, true);
     }
 
-    callback(new Error('Não permitido pelo CORS'));
+    const corsError = new Error('Não permitido pelo CORS');
+    corsError.origin = origin;
+    callback(corsError);
   },
   credentials: (config.cors.allowedOrigins && !config.cors.allowedOrigins.includes('*') && config.cors.allowedOrigins.length > 0),
   methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],

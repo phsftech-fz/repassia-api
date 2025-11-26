@@ -2,6 +2,17 @@ const { error } = require('../utils/response');
 const logger = require('../utils/logger');
 
 const errorMiddleware = (err, req, res, next) => {
+  if (err.message === 'Não permitido pelo CORS') {
+    logger.error('CORS bloqueado', {
+      message: err.message,
+      origin: err.origin || 'não informada',
+      url: req.url,
+      method: req.method,
+      ip: req.ip || req.connection.remoteAddress
+    });
+    return error(res, 'Acesso não permitido para esta origem', 'CORS_ERROR', null, 403);
+  }
+
   logger.error('Erro capturado', {
     message: err.message,
     code: err.code,
@@ -22,10 +33,6 @@ const errorMiddleware = (err, req, res, next) => {
         }))
       }
     });
-  }
-
-  if (err.message === 'Não permitido pelo CORS') {
-    return error(res, 'Acesso não permitido para esta origem', 'CORS_ERROR', null, 403);
   }
 
   if (err.code === 'P2002') {
