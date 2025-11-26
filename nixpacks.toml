@@ -1,25 +1,17 @@
-# Nixpacks Configuration for RepassIA API
-# Easypanel usa Nixpacks para detectar e construir aplicações automaticamente
-
 [phases.setup]
-nixPkgs = ["nodejs-18_x"]
+nixPkgs = ["nodejs_20"]
 
 [phases.install]
-# Instalar dependências de produção primeiro
 cmds = [
-  "npm ci --only=production"
+  "npm ci",
+  "npx prisma generate"
 ]
 
 [phases.build]
-# Instalar Prisma CLI temporariamente apenas para gerar o client
-# Depois removemos para manter a imagem menor
 cmds = [
-  "npm install --no-save prisma@^5.7.0",
-  "npx prisma generate",
-  "npm uninstall prisma"
+  "npx prisma migrate deploy"
 ]
 
-# Comando de inicialização
 [start]
 cmd = "node server.js"
 
