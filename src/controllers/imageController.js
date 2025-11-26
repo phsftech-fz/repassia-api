@@ -86,6 +86,23 @@ class ImageController {
                          fileData.stat.metaData['Content-Type'] ||
                          'image/jpeg';
       
+      // Headers CORS explícitos para garantir que imagens sejam acessíveis
+      const config = require('../config/env');
+      const origin = req.headers.origin;
+      const allowedOrigins = config.cors.allowedOrigins || [];
+      
+      // Se wildcard está configurado ou não há origens configuradas, permitir todas
+      if (allowedOrigins.includes('*') || allowedOrigins.length === 0) {
+        res.setHeader('Access-Control-Allow-Origin', '*');
+      } else if (origin && allowedOrigins.includes(origin)) {
+        // Se há origin e está na lista permitida, usar a origin específica
+        res.setHeader('Access-Control-Allow-Origin', origin);
+        res.setHeader('Access-Control-Allow-Credentials', 'true');
+      } else if (!origin) {
+        // Se não há origin (requisição direta de imagem), permitir todas se wildcard ou lista vazia
+        res.setHeader('Access-Control-Allow-Origin', '*');
+      }
+      
       res.setHeader('Content-Type', contentType);
       res.setHeader('Content-Length', fileData.stat.size);
       res.setHeader('Cache-Control', 'public, max-age=31536000');
