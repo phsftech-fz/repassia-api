@@ -91,17 +91,24 @@ class ImageController {
       const origin = req.headers.origin;
       const allowedOrigins = config.cors.allowedOrigins || [];
       
-      // Se wildcard está configurado ou não há origens configuradas, permitir todas
+      // Determinar qual origin permitir
+      let allowedOrigin = '*';
       if (allowedOrigins.includes('*') || allowedOrigins.length === 0) {
-        res.setHeader('Access-Control-Allow-Origin', '*');
+        allowedOrigin = '*';
       } else if (origin && allowedOrigins.includes(origin)) {
-        // Se há origin e está na lista permitida, usar a origin específica
-        res.setHeader('Access-Control-Allow-Origin', origin);
-        res.setHeader('Access-Control-Allow-Credentials', 'true');
+        allowedOrigin = origin;
       } else if (!origin) {
-        // Se não há origin (requisição direta de imagem), permitir todas se wildcard ou lista vazia
-        res.setHeader('Access-Control-Allow-Origin', '*');
+        // Requisição direta de imagem (sem origin header) - permitir todas
+        allowedOrigin = '*';
       }
+      
+      // Sempre definir os headers CORS antes de qualquer outro header
+      res.setHeader('Access-Control-Allow-Origin', allowedOrigin);
+      if (allowedOrigin !== '*') {
+        res.setHeader('Access-Control-Allow-Credentials', 'true');
+      }
+      res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
+      res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
       
       res.setHeader('Content-Type', contentType);
       res.setHeader('Content-Length', fileData.stat.size);

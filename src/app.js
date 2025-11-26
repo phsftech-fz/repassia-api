@@ -12,11 +12,40 @@ const { checkMinioConnection } = require('./config/minio');
 const app = express();
 
 // Middlewares globais
-app.use(helmet());
+app.use(helmet({
+  crossOriginResourcePolicy: { policy: "cross-origin" },
+  crossOriginEmbedderPolicy: false,
+  crossOriginOpenerPolicy: false
+}));
 app.use(corsMiddleware);
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(loggerMiddleware);
+
+// Middleware específico para garantir CORS em imagens (após todos os middlewares)
+app.use('/api/v1/images', (req, res, next) => {
+  const config = require('./config/env');
+  const origin = req.headers.origin;
+  const allowedOrigins = config.cors.allowedOrigins || [];
+  
+  let allowedOrigin = '*';
+  if (allowedOrigins.includes('*') || allowedOrigins.length === 0) {
+    allowedOrigin = '*';
+  } else if (origin && allowedOrigins.includes(origin)) {
+    allowedOrigin = origin;
+  } else if (!origin) {
+    allowedOrigin = '*';
+  }
+  
+  res.setHeader('Access-Control-Allow-Origin', allowedOrigin);
+  if (allowedOrigin !== '*') {
+    res.setHeader('Access-Control-Allow-Credentials', 'true');
+  }
+  res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+  
+  next();
+});
 
 // Health check
 app.get('/health', async (req, res) => {
