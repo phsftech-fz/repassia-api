@@ -14,12 +14,14 @@ try {
 
 const app = require('./src/app');
 const logger = require('./src/utils/logger');
-const { startSchedulers } = require('./src/schedulers');
+const { startSchedulers, stopSchedulers } = require('./src/schedulers');
 const { checkDatabaseConnection } = require('./src/config/database');
+const { prisma } = require('./src/config/database');
 const { checkMinioConnection, ensureBucket } = require('./src/config/minio');
 const config = require('./src/config/env');
 
 const PORT = config.server.port;
+let server = null;
 
 // Função para inicializar serviços antes de iniciar o servidor
 const initializeServices = async () => {
@@ -66,17 +68,39 @@ const initializeServices = async () => {
   }
 };
 
-// Inicializar e iniciar servidor
+const gracefulShutdown = async (signal) => {
+  logger.info(`${signal} recebido, encerrando servidor graciosamente...`);
+  
+  if (server) {
+    server.close(() => {
+      logger.info('Servidor HTTP fechado');
+    });
+  }
+  
+  stopSchedulers();
+  
+  try {
+    await prisma.$disconnect();
+    logger.info('Conexão com banco de dados fechada');
+  } catch (error) {
+    logger.error('Erro ao fechar conexão com banco:', error);
+  }
+  
+  setTimeout(() => {
+    logger.info('Encerrando processo...');
+    process.exit(0);
+  }, 5000);
+};
+
 const startServer = async () => {
   try {
     await initializeServices();
 
-    app.listen(PORT, () => {
+    server = app.listen(PORT, () => {
       logger.info(`🚀 Servidor rodando na porta ${PORT}`);
       logger.info(`📝 Ambiente: ${config.server.nodeEnv}`);
       logger.info(`🌐 API Base URL: ${config.server.apiBaseUrl}`);
 
-      // Iniciar schedulers
       startSchedulers();
       logger.info('⏰ Schedulers iniciados');
     });
@@ -88,16 +112,8 @@ const startServer = async () => {
 
 startServer();
 
-// Graceful shutdown
-process.on('SIGTERM', () => {
-  logger.info('SIGTERM recebido, encerrando servidor...');
-  process.exit(0);
-});
-
-process.on('SIGINT', () => {
-  logger.info('SIGINT recebido, encerrando servidor...');
-  process.exit(0);
-});
+process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
+process.on('SIGINT', () => gracefulShutdown('SIGINT'));
 
 // Tratamento de erros não capturados
 process.on('unhandledRejection', (reason, promise) => {
